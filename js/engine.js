@@ -33,7 +33,7 @@ var Engine = (function (global) {
         render();
         lastTime = now;
         win.requestAnimationFrame(main);
-    };
+    }
 
 
     /*
@@ -46,7 +46,7 @@ var Engine = (function (global) {
                 setupNewGame();
                 lastTime = Date.now();
                 main();
-            })
+            });
         });
     }
 
@@ -76,7 +76,7 @@ var Engine = (function (global) {
             if (item.destroyed) {
                 removeElement(item, allItems);
             }
-        })
+        });
         allAttacks.forEach(function (attack) {
             attack.update(dt);
             if (attack.speed === 0) {
@@ -106,7 +106,7 @@ var Engine = (function (global) {
         renderEntities();
         renderLives();
         renderBullets();
-        };
+        }
 
     /*
      * Draws a white rectangle as the background for the game map.
@@ -153,7 +153,7 @@ var Engine = (function (global) {
      */
     function renderLives() {
         var heartX = 0;
-        var life = player.lives
+        var life = player.lives;
         for (var i = 0; i < life; i++) {
             ctx.drawImage(Resources.get('images/Heart-small.png'), heartX, -10);
             heartX += 50;
@@ -196,8 +196,8 @@ var Engine = (function (global) {
                     removeElement(enemy, allEnemies);
                     removeElement(attack, allAttacks);
                 }
-            })
-        })
+            });
+        });
         // If player is on a water tile, reset the game or level depending on
         // if the player has lives left.
         map.tiles.forEach(function (tile) {
@@ -209,7 +209,7 @@ var Engine = (function (global) {
                     resetLevel();
                 }
             }
-        })
+        });
     }
 
     /*
@@ -396,7 +396,7 @@ var Engine = (function (global) {
                     allRockCoords.push([tile.x, tile.y]);
                 }
             });
-            for (var i = 0; i < rockNumber; i++) {
+            for (var x = 0; x < rockNumber; x++) {
                 var rockCoords = choice(allRockCoords);
                 map.rocks.push(new Rock(rockCoords[0], rockCoords[1]));
                 removeElement(rockCoords, allRockCoords);
@@ -520,7 +520,7 @@ var Engine = (function (global) {
         var gemCoords = choice(itemCoords);
         // Remove gem coordinates so other items can't occupy same space.
         removeElement(gemCoords, itemCoords);
-        var gem = new Gem(gemCoords[0], gemCoords[1]);;
+        var gem = new Gem(gemCoords[0], gemCoords[1]);
         items.push(gem);
 
         if (gamestate.level % 5 === 0) {

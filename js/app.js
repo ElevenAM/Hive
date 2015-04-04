@@ -53,7 +53,7 @@ var removeElement = function (element, array) {
 var pauseAlert = function (text) {
     gamestate.paused = true;
     bootbox.alert(text, function () {
-        gamestate.paused = false
+        gamestate.paused = false;
     });
 };
 
@@ -216,7 +216,7 @@ Charger.prototype.charging = function () {
                 self.sprite = 'images/charger.png';
             }, 500);
         }
-    }, chargingInterval)
+    }, chargingInterval);
 };
 
 /*
@@ -274,7 +274,7 @@ Sidestepper.prototype.sidestep = function () {
                 self.sideStepSpeed = -100;
             }
         }
-    }, steppingInterval)
+    }, steppingInterval);
 };
 
 /*
@@ -478,7 +478,7 @@ Player.prototype.move = function (direction) {
             if (tile instanceof Wall && newX === tile.x && newY === tile.y){
                 hitWall = true;
             }
-        })
+        });
         // If all these tests have been passed, move the player.
         if (!hitRock && !hitWall) {
             this.x = newX;
@@ -529,7 +529,7 @@ var Item = function (x, y) {
  */
 Item.prototype.render = function () {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y +
-        this.renderOffsetY);;
+        this.renderOffsetY);
 };
 
 
@@ -711,8 +711,8 @@ Rock.prototype.constructor = Rock;
 */
 var Wall = function (x, y) {
     MapObject.call(this, x, y);
-    this.sprite = 'images/Wall.png'
-}
+    this.sprite = 'images/Wall.png';
+};
 
 Wall.prototype = Object.create(MapObject.prototype);
 Wall.prototype.constructor = Wall;
@@ -756,7 +756,7 @@ var Attack = function () {
     this.y = player.y;
     this.width = 20;
     this.height = 80;
-    this.renderOffsetY = 80
+    this.renderOffsetY = 80;
 };
 
 /*
