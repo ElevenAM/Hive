@@ -1,0 +1,40 @@
+body {
+  font-family: "Press Start 2P", "cursive";
+  text-align: center;
+  color: black;
+}
+
+h1 {
+  font-size: 24px;
+}
+
+h2 {
+  font-size: 20px;
+}
+
+p {
+  font-size: 12px;
+}
+
+img {
+  margin: 0 auto;
+  display: block;
+  padding-bottom: 30px;
+}
+
+hr {
+  border: 5px solid black;
+}
+
+.modal-dialog {
+  color: black;
+  width: 80%;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.modal-body {
+  color: black;
+  max-height: 600px;
+  overflow-y: scroll;
+}

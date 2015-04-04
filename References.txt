@@ -1,0 +1,1 @@
+Based off Frogger Clone (The Buggening) by Ben Halperin. Code has been added/ modified to fit my own needs and comments explaining functionality are my own. I fully understand every line of code included in my submission.
