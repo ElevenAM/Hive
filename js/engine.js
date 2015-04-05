@@ -1,4 +1,4 @@
-// Constants
+// Constants. Set in Engine.js because this is called by index.html first
 var X_LEFT = 0,
     X_RIGHT = 707,
     Y_TOP = 0,
@@ -9,7 +9,7 @@ var X_LEFT = 0,
     Y_CANVAS = 606,
     DARK_LEVELS = 14;
 
-//Sets up the canvas for the game to work within
+//Game Engine involved in initial set up
 var Engine = (function (global) {
     var doc = global.document,
     canvas = doc.createElement('canvas'),
@@ -22,39 +22,29 @@ var Engine = (function (global) {
     canvas.height = Y_CANVAS;
     doc.body.appendChild(canvas);
 
-    /*
-     * Main game loop. Gets current time, updates entity positions, renders map
-     * and entities, then repeats.
-     */
-    function main() {
+    function mainGameLoop() {
         var now = Date.now(),
             dt = (now - lastTime) / 1000.0;
         update(dt);
         render();
         lastTime = now;
-        win.requestAnimationFrame(main);
+        win.requestAnimationFrame(mainGameLoop);
     }
 
-
-    /*
-     * Uses bootbox library to open intial dialog/ instruction boxes. Sets up the game and
-     * calls the main function to begin the game.
-     */
     function init() {
+        //Uses bootbox library to open initial dialogue/ instruction boxes
         bootbox.alert(openingMessage, function () {
             bootbox.alert(instructionMessage, function () {
+                //Sets up and begins game
                 setupNewGame();
                 lastTime = Date.now();
-                main();
+                mainGameLoop();
             });
         });
     }
 
 
-    /*
-     * Function that updates the state of the game. Checks on positions of all
-     * entities (enemies, attacks, items), collisions and level completion
-     */
+//Updates Game state to reflect game actions (player and nonplayer)
     function update(dt) {
         updateEntities(dt);
         checkAllCollisions();
@@ -62,12 +52,7 @@ var Engine = (function (global) {
         checkLevelCompletion();
     }
 
-    /*
-     * Function that updates the position of each enemy and attack,
-     * checks if items have been collected
-     * and if attacks have stopped moving.
-     * Removes items and attacks that are no longer needed
-     */
+//Update methods are located in app.js. Generally includes updating movement and existence
     function updateEntities(dt) {
         allEnemies.forEach(function (enemy) {
             enemy.update(dt);
@@ -85,21 +70,13 @@ var Engine = (function (global) {
         });
     }
 
-
-
-    /*
-     * Determines if the player reached the map's end point for that level.
-     */
     function checkLevelCompletion() {
         if (player.x === map.end.x && player.y === map.end.y) {
             setupNewLevel();
         }
     }
 
-    /**
-     * Draws the brackground, map, player, all enemies, all items, all attacks,
-     * the lives and number of bullets
-     */
+//Draws what needs to be drawn
     function render() {
         renderBackground();
         renderMap();
@@ -108,18 +85,11 @@ var Engine = (function (global) {
         renderBullets();
         }
 
-    /*
-     * Draws a white rectangle as the background for the game map.
-     */
     function renderBackground() {
         ctx.fillStyle = 'white';
         ctx.fillRect(-20, -20, 1000, 1000);
     }
 
-    /*
-     * Draws all map tiles and map objects (start point, end point/door, rocks)
-     * on the screen.
-     */
     function renderMap() {
         map.tiles.forEach(function (tile) {
             tile.render();
@@ -131,9 +101,6 @@ var Engine = (function (global) {
         });
     }
 
-    /*
-     * Draws the player, all enemies, all items, and all attacks on the screen.
-     */
     function renderEntities() {
         allItems.forEach(function (item) {
             item.render();
@@ -147,10 +114,7 @@ var Engine = (function (global) {
         player.render();
     }
 
-    /*
-     * Draws hearts in the top left corner of the screen based on the number
-     * of lives the player has.
-     */
+//Life counter
     function renderLives() {
         var heartX = 0;
         var life = player.lives;
@@ -160,9 +124,7 @@ var Engine = (function (global) {
         }
     }
 
-    /*
-     * Draws/writes the current number of bullets in the top right corner of the screen.
-     */
+//Ammo counter
     function renderBullets() {
         ctx.font = "20px 'Press Start 2P'";
         ctx.fillStyle = 'black';
@@ -171,21 +133,13 @@ var Engine = (function (global) {
     }
 
 
-    /*
-     * Checks if enemies have hit players, if attacks have hit enemies, and if
-     * the player is on water.  Resets game, level, or kills enemies depending
-     * on game conditions.
-     */
     function checkAllCollisions() {
         allEnemies.forEach(function (enemy) {
-            // If player collides with enemy and they're invincible or
-            // udacious (cheats) then kill the enemy.  Otherwise reset
-            // the game or level depending on if the player has lives left.
             if (checkCollision(player, enemy)) {
-                //out of lives = reset the game
+                //Reset game if player doesn't have lives
                 if (player.lives - 1 === 0) {
                     resetGame();
-                //got lives? reset just the level
+                //Reset level if player has lives
                 } else {
                     resetLevel();
                 }
@@ -198,8 +152,7 @@ var Engine = (function (global) {
                 }
             });
         });
-        // If player is on a water tile, reset the game or level depending on
-        // if the player has lives left.
+        // Kills player on water tile
         map.tiles.forEach(function (tile) {
             if (tile instanceof Water && player.x === tile.x &&
                 player.y === tile.y) {
@@ -212,26 +165,18 @@ var Engine = (function (global) {
         });
     }
 
-    /*
-     * Helper function for checkAllCollisions. Checks if one entity's left edge
-     * or right edge is between the other entity's left and right edge.
-     * Returns true if edges overlap. Returns false otehrwise
-     */
+//Checks edge overlap to determine collision status for checkAllCollisions function above
     function checkCollision(entity1, entity2) {
-        if (inRange(entity1.right(), entity2.left(), entity2.right()) ||
-            inRange(entity1.left(), entity2.left(), entity2.right())) {
-            if (inRange(entity1.top(), entity2.top(), entity2.bottom()) ||
-                inRange(entity1.bottom(), entity2.top(), entity2.bottom())) {
+        if (isBetween(entity1.rightEdge(), entity2.leftEdge(), entity2.rightEdge()) ||
+            isBetween(entity1.leftEdge(), entity2.leftEdge(), entity2.rightEdge())) {
+            if (isBetween(entity1.topEdge(), entity2.topEdge(), entity2.bottomEdge()) ||
+                isBetween(entity1.bottomEdge(), entity2.topEdge(), entity2.bottomEdge())) {
                 return true;
             }
         }
         return false;
     }
 
-    /*
-     * Gives value to major game variables and sets the clock to start
-     * calculating level completion time.
-     */
     function setupNewGame() {
         levelStartTime = Date.now();
         gamestate = new GameState();
@@ -242,14 +187,9 @@ var Engine = (function (global) {
         allAttacks = [];
     }
 
-    /*
-     * Sets up a new level with a new map, new enemies, new items and
-     * new start/ end points
-     */
     function setupNewLevel() {
         gamestate.level += 1;
         $("#level").html(gamestate.level);
-        // Start the clock for this level.
         levelStartTime = Date.now();
         // Once the player gets to the dark levels (20+) start increasing
         // the game speed with each level, but maximum game speed is 2.5.
@@ -257,7 +197,6 @@ var Engine = (function (global) {
             gamestate.speed += 0.05;
         }
         map = createMap();
-        // Set player x and y-coordinates.
         player.startX().startY();
         allEnemies = createEnemies();
         allItems = createItems();
@@ -265,18 +204,14 @@ var Engine = (function (global) {
         player.hasKey = false;
     }
 
-    /**
-     * This function displays a message telling the player they lost, displays
-     * their score and level achieved, and prompts them to start again.
-     */
+//Ends Game and displays final death prompt with level achieved
     function resetGame() {
         $('#page-header').html('Hive');
         var levelAchieved = gamestate.level;
         gamestate = new GameState();
         map = createMap();
         player = new Player();
-        // Move player off the screen so they can't move while the dialog box
-        // is up.
+        // Move player off the screen so they can't move while the dialog box is up.
         player.x = -100;
         player.y = -100;
         gamestate.paused = true;
@@ -292,10 +227,7 @@ var Engine = (function (global) {
         $('#finalLevel').html(levelAchieved);
     }
 
-    /*
-     * The player loses a life, a dialog box letting the player know they lost
-     * a life pops up, and the player and enemy positions are reset.
-     */
+//Removes a life and resets enemy/ player locations
     function resetLevel() {
         player.lives -= 1;
         pauseAlert(deathMessage);
@@ -303,7 +235,7 @@ var Engine = (function (global) {
         allEnemies.forEach(function (enemy) {
             enemy.startX().startY().setSpeed();
             // If the enemy is a backtracker, when the level resets, it may be
-            // moving to the left and its sprite will be flipped.  This is why
+            // moving to the left and its sprite will be flipped. This is why
             // we need to set it back to the original sprite.
             if (enemy instanceof Backtracker) {
                 enemy.sprite = 'images/backtracker.png';
@@ -311,14 +243,10 @@ var Engine = (function (global) {
         });
     }
 
-    /*
-     * Similar to checkAllCollisions, but checks if the player has landed on
-     * an item.  Different items have different effects when picked up.
-     */
+
     function collectItems() {
         allItems.forEach(function (item) {
             if (player.x === item.x && player.y === item.y) {
-
                 if (item instanceof Key) {
                     // Allows for movement onto door
                     player.hasKey = true;
@@ -336,24 +264,18 @@ var Engine = (function (global) {
         });
     }
 
-    /*
-     * Function to create the game map.  Randomly assigns map start and end
-     * point.  Randomly assigns rock locations if the level is high enough.
-     */
+
     function createMap() {
         var map = {
-            // The "background" for the map.  An array containing MapTile
-            // instances.
+            // Array containing MapTile instances
             'tiles': [],
-            // Where the player starts on the map.
+            // Player start
             'start': null,
-            // Where the player needs to go with the key to get to the next
-            // level.
+            // Door: Player goal
             'end': null,
-            // An array containing all the Rock instances on the map.
             'rocks': []
         };
-        // Choose random x-position for start and end points.  (Can't be
+        // Choose random x-position for start and end points. (Can't be
         // left or right-most tile)
         var mapStart = randInt(1, 4) * X_STEP;
         var mapEnd = randInt(1, 4) * X_STEP;
@@ -368,7 +290,7 @@ var Engine = (function (global) {
                     } else {
                         map.tiles.push(new Wall(i, j));
                     }
-                    // Center of map does not change.
+                    // Center of map containing grass and stones
                 } else if (j === Y_STEP || j === 4 * Y_STEP) {
                     map.tiles.push(new Grass(i, j));
                 } else if (j === 2 * Y_STEP || j === 3 * Y_STEP) {
@@ -389,7 +311,7 @@ var Engine = (function (global) {
             var rockNumber = randInt(1, 3);
             var allRockCoords = [];
             map.tiles.forEach(function (tile) {
-                // Don't put rocks on water, or in the same column as the
+                // Don't put rocks on water, or in the same row as the
                 // start or end point.
                 if ((!(tile instanceof Water || tile instanceof Wall)) && tile.x !== map.start.x &&
                     tile.x !== map.end.x) {
@@ -397,7 +319,7 @@ var Engine = (function (global) {
                 }
             });
             for (var x = 0; x < rockNumber; x++) {
-                var rockCoords = choice(allRockCoords);
+                var rockCoords = randChoice(allRockCoords);
                 map.rocks.push(new Rock(rockCoords[0], rockCoords[1]));
                 removeElement(rockCoords, allRockCoords);
             }
@@ -405,10 +327,6 @@ var Engine = (function (global) {
         return map;
     }
 
-    /**
-     * Function to create enemies for a level.  Number and type of enemies will
-     * vary by the current level.
-     */
     function createEnemies() {
         // Array where all enemies will be stored.
         var enemies = [];
@@ -430,7 +348,7 @@ var Engine = (function (global) {
         for (var i = 0; i < enemyCount; i++) {
             // Pick a random enemy name from the weighted list and add the
             // corresponding enemy object to the enemies array.
-            newSelection = choice(weightedEnemyList);
+            newSelection = randChoice(weightedEnemyList);
             if (newSelection === 'enemy') {
                 newEnemy = new Enemy();
             } else if (newSelection === 'charger') {
@@ -449,10 +367,8 @@ var Engine = (function (global) {
         return enemies;
     }
 
-    /**
-     * Helper function for createEnemies function. Determines the chance
-     * each type of enemy will show up based on the current level.
-     */
+
+// Determines the chance each type of enemy will show up based on the current level.
     function calcEnemyWeights() {
         var enemyWeights = {
             'enemy': 1,
@@ -477,10 +393,6 @@ var Engine = (function (global) {
         return enemyWeights;
     }
 
-    /**
-     * Creates and randomly assigns valid coordinates to all items needed
-     * for a level.
-     */
     function createItems() {
         var items = [];
         // Array that will store all possible locations an item could be placed.
@@ -504,20 +416,19 @@ var Engine = (function (global) {
                     }
                 });
                 if (!nearRock) {
-                    // It's ok for an item to be placed here.  Add coordinates
-                    // to itemCoords array.
+                    // Add coordinates to itemCoords array.
                     itemCoords.push([tile.x, tile.y]);
                 }
             }
         });
 
-        var keyCoords = choice(itemCoords);
+        var keyCoords = randChoice(itemCoords);
         // Remove key coordinates so other items can't occupy same space.
         removeElement(keyCoords, itemCoords);
         var key = new Key(keyCoords[0], keyCoords[1]);
         items.push(key);
 
-        var gemCoords = choice(itemCoords);
+        var gemCoords = randChoice(itemCoords);
         // Remove gem coordinates so other items can't occupy same space.
         removeElement(gemCoords, itemCoords);
         var gem = new Gem(gemCoords[0], gemCoords[1]);
@@ -525,7 +436,7 @@ var Engine = (function (global) {
 
         if (gamestate.level % 5 === 0) {
             if (Math.random() > 0.5) {
-                var heartCoords = choice(itemCoords);
+                var heartCoords = randChoice(itemCoords);
                 // Remove heart coordinates so other items can't occupy same
                 // space.
                 removeElement(heartCoords, itemCoords);
@@ -535,7 +446,6 @@ var Engine = (function (global) {
         }
         return items;
     }
-
 
     // Load all sprites needed for the game.
     Resources.load([

@@ -8,37 +8,24 @@ var allAttacks;
 var levelStartTime;
 var levelFinishTime;
 
-// General Utility Functions
+// General Utility Functions for later use
 
-/*
- * Function to check if a number falls between two numbers.
- * Takes in value to check, min value, max value and returns boolean
- */
-var inRange = function (value, min, max) {
+var isBetween = function (value, min, max) {
     if (value <= max && value >= min) {
         return true;
     }
     return false;
 };
 
-/*
- * Function to calculate random integer between two numbers.
- */
 var randInt = function (min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
 };
 
-/*
- * Function that randomly chooses and returns an element from an array.
- */
-var choice = function (array) {
+var randChoice = function (array) {
     return array[Math.floor(Math.random() * array.length)];
 };
 
-/*
- * Function that removes an element from an array by value. If there are
- * multiple matching elements, the first one will be removed.
- */
+//Removes first element from array in case of multiple matches
 var removeElement = function (element, array) {
     var index = array.indexOf(element);
     if (index !== -1) {
@@ -46,10 +33,6 @@ var removeElement = function (element, array) {
     }
 };
 
-/*
- * Pauses the game and brings up a dialog box. Resumes the game when the
- * dialog box is closed.
- */
 var pauseAlert = function (text) {
     gamestate.paused = true;
     bootbox.alert(text, function () {
@@ -58,9 +41,8 @@ var pauseAlert = function (text) {
 };
 
 /*
- * Function that creates a weighted list of elements. Takes in elements and assigned
- * weights. Different weights will change the probability that certain elements
- * are chosen.
+ * Weighted List that holds both elements and respective weights to adjust the probability
+ * of certain elements being chosen. Higher weight = higher chance
  */
 var generateWeightedList = function (list, weight) {
     var weightedList = [];
@@ -76,9 +58,6 @@ var generateWeightedList = function (list, weight) {
 
 // Constructors
 
-/*
- * An Object hosting properties relevant to the game
- */
 var GameState = function () {
     this.paused = false;
     this.level = 1;
@@ -86,11 +65,8 @@ var GameState = function () {
     this.bullets = 0;
 };
 
-/*
- * An Object to construct the most basic enemy/ bug. Will be used as the base class for
- * subclasses of enemies. Object includes random start point generation and random speed
- * generation.
- */
+
+//Base class for all enemies
 var Enemy = function () {
     this.width = 90;
     this.height = 80;
@@ -98,6 +74,7 @@ var Enemy = function () {
     this.minSpeed = 50;
     this.xStartOptions = [];
     this.yStartOptions = [];
+//Determines Enemy start location
     for (var i = -3; i < 5; i++) {
         this.xStartOptions.push(i * X_STEP);
     }
@@ -110,10 +87,6 @@ var Enemy = function () {
     this.sprite = 'images/enemy-bug.png';
 };
 
-/*
- * Function used in Engine to update enemy positions based on speed/ dt.
- * Accounts for enemies that go beyond the right side of the screen
- */
 Enemy.prototype.update = function (dt) {
     if (!gamestate.paused) {
         this.x += dt * this.speed * gamestate.speed;
@@ -124,70 +97,44 @@ Enemy.prototype.update = function (dt) {
     }
 };
 
-/*
- * Draws enemy's sprite on screen.
- */
-Enemy.prototype.render = function () {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y - 20);
-};
-
-/*
- * Position of enemy's left edge. Used for collision purposes
- */
-Enemy.prototype.left = function () {
-    return this.x;
-};
-
-/*
- * Position of enemy's right edge. Used for collision purposes
- */
-Enemy.prototype.right = function () {
-    return this.x + this.width;
-};
-
-/*
- * Position of enemy's top edge. Used for collision purposes
- */
-Enemy.prototype.top = function () {
-    return this.y;
-};
-
-/*
- * Position of enemy's bottom edge. Used for collision purposes
- */
-Enemy.prototype.bottom = function () {
-    return this.y + this.height;
-};
-
-/*
- * Function to randomly choose an enemy's starting X-coordinates based on possible choices
- */
 Enemy.prototype.startX = function () {
-    this.x = choice(this.xStartOptions);
+    this.x = randChoice(this.xStartOptions);
     return this;
 };
 
-/*
- * Function to randomly choose an enemy's starting Y-coordinates based on possible choices
- */
 Enemy.prototype.startY = function () {
-    this.y = choice(this.yStartOptions);
+    this.y = randChoice(this.yStartOptions);
     return this;
 };
 
-/*
- * Sets enemy speed to random integer between enemy's minimum and maximum speeds.
- */
 Enemy.prototype.setSpeed = function () {
     this.speed = randInt(this.minSpeed, this.maxSpeed);
     return this;
 };
 
+Enemy.prototype.render = function () {
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y - 20);
+};
+
+Enemy.prototype.leftEdge = function () {
+    return this.x;
+};
+
+Enemy.prototype.rightEdge = function () {
+    return this.x + this.width;
+};
+
+Enemy.prototype.topEdge = function () {
+    return this.y;
+};
+
+Enemy.prototype.bottomEdge = function () {
+    return this.y + this.height;
+};
+
 // Enemy Subclasses
 
-/*
- * An enemy that randomly increases speed for short bursts.
- */
+//Charger subclass will "charge" on occasion to increase its speed
 var Charger = function () {
     Enemy.call(this);
     this.sprite = 'images/charger.png';
@@ -197,19 +144,16 @@ var Charger = function () {
 Charger.prototype = Object.create(Enemy.prototype);
 Charger.prototype.constructor = Charger;
 
-/*
- * Method setting an interval for this enemy to check if it will charge or not.
- * If this enemy charges, its speed increases to 700 for half a second
- * before returning to its original speed.
- */
 Charger.prototype.charging = function () {
     // self is used so access this inside the setInterval function.
     var self = this;
     var originalSpeed = self.speed;
     var chargingInterval = randInt(2000, 5000);
+//Checks to see if Charger will charge or not and returns Charger to normal after a charge
     setInterval(function () {
         var willCharge = Math.random();
         if (willCharge > 0.5) {
+            self.sprite = 'images/charger-charging.png'
             self.speed = 700;
             setTimeout(function () {
                 self.speed = originalSpeed;
@@ -219,9 +163,7 @@ Charger.prototype.charging = function () {
     }, chargingInterval);
 };
 
-/*
- * Enemy that will randomly move one step up or down on Y axis.
- */
+//Enemy that will randomly sidestep up or down the Y axis.
 var Sidestepper = function () {
     Enemy.call(this);
     this.sideStepSpeed = 0;
@@ -232,29 +174,6 @@ var Sidestepper = function () {
 Sidestepper.prototype = Object.create(Enemy.prototype);
 Sidestepper.prototype.constructor = Sidestepper;
 
-/*
- * Modified enemy update method to compensate for Sidestepper ability to move
- * on the Y axis if it has a non-zero value for its sideStepSpeed property and it hasn't
- * reached its new row yet.
- */
-Sidestepper.prototype.update = function (dt) {
-    Enemy.prototype.update.call(this, dt);
-    if (!gamestate.paused) {
-        this.y += dt * this.sideStepSpeed * gamestate.speed;
-        // If this sidestepper has reached or passed its target row,
-        // set it's y-position to the target row and stop its y-movement.
-        if (this.sideStepSpeed > 0 && this.y > this.newY || this.sideStepSpeed < 0 && this.y < this.newY) {
-            this.y = this.newY;
-            this.sideStepSpeed = 0;
-        }
-    }
-};
-
-/*
- * Method setting an interval to check to see if Sidestepper it will "Sidestep" based on a
- * random number generator.  If this enemy will step, another check will be made
- * to determine the direction (up or down).
- */
 Sidestepper.prototype.sidestep = function () {
     // self is used to access this inside the setInterval function.
     var self = this;
@@ -277,10 +196,19 @@ Sidestepper.prototype.sidestep = function () {
     }, steppingInterval);
 };
 
-/*
- * An enemy that turns around when it gets past the edge of the screen.
- * It will also randomly turn around sometimes.
- */
+Sidestepper.prototype.update = function (dt) {
+    Enemy.prototype.update.call(this, dt);
+    if (!gamestate.paused) {
+        this.y += dt * this.sideStepSpeed * gamestate.speed;
+        // Updates Y axis position if sidestepping and bug hasn't reached new row yet
+        if (this.sideStepSpeed > 0 && this.y > this.newY || this.sideStepSpeed < 0 && this.y < this.newY) {
+            this.y = this.newY;
+            this.sideStepSpeed = 0;
+        }
+    }
+};
+
+// Enemy that changes directions either at the end of the map or at random intervals
 var Backtracker = function () {
     Enemy.call(this);
     this.sprite = 'images/backtracker.png';
@@ -289,34 +217,11 @@ var Backtracker = function () {
 Backtracker.prototype = Object.create(Enemy.prototype);
 Backtracker.prototype.constructor = Backtracker;
 
-/*
- * Updates x position of enemy based on its speed and dt if the game
- * isn't paused. Changes direction if the end of a screen is reached
- */
-Backtracker.prototype.update = function (dt) {
-    if (!gamestate.paused) {
-        this.x += dt * this.speed * gamestate.speed;
-    }
-    if (this.left() > X_RIGHT + 2 * X_STEP && this.speed > 0) {
-        // Multiply speed by negative one to turn around.
-        this.speed *= -1;
-        this.sprite = 'images/backtracker-reverse.png';
-    }
-    if (this.right() < X_LEFT - 2 * X_STEP && this.speed < 0) {
-        // Multiply speed by negative one to turn around.
-        this.speed *= -1;
-        this.sprite = 'images/backtracker.png';
-    }
-};
-
-/*
- * Method to check if Backtracker enemy will change directions or not. Also makes sure
- * that Backtracker is using the correct sprite for its direction
- */
 Backtracker.prototype.backtrack = function () {
     // self is used to access this inside the setInterval function.
     var self = this;
     var backtrackInterval = randInt(5000, 10000);
+//Randomly chooses to swap directions and makes sure correct sprite is being used
     setInterval(function () {
         var willBacktrack = Math.random();
         if (willBacktrack > 0.2) {
@@ -330,9 +235,23 @@ Backtracker.prototype.backtrack = function () {
     }, backtrackInterval);
 };
 
-/**
- * A really slow enemy
- */
+Backtracker.prototype.update = function (dt) {
+    if (!gamestate.paused) {
+        this.x += dt * this.speed * gamestate.speed;
+    }
+    if (this.leftEdge() > X_RIGHT + 2 * X_STEP && this.speed > 0) {
+        // Multiply speed by negative one to turn around.
+        this.speed *= -1;
+        this.sprite = 'images/backtracker-reverse.png';
+    }
+    if (this.rightEdge() < X_LEFT - 2 * X_STEP && this.speed < 0) {
+        // Multiply speed by negative one to turn around.
+        this.speed *= -1;
+        this.sprite = 'images/backtracker.png';
+    }
+};
+
+//Enemy that is really slow
 var Slowpoke = function () {
     Enemy.call(this);
     this.sprite = 'images/slowpoke.png';
@@ -344,9 +263,7 @@ var Slowpoke = function () {
 Slowpoke.prototype = Object.create(Enemy.prototype);
 Slowpoke.prototype.constructor = Slowpoke;
 
-/**
- * A long enemy.
- */
+//Enemy that is really long
 var Centipede = function () {
     Enemy.call(this);
     this.sprite = 'images/centipede.png';
@@ -357,9 +274,7 @@ Centipede.prototype = Object.create(Enemy.prototype);
 Centipede.prototype.constructor = Centipede;
 
 
-/**
- * Player Class Constructor
- */
+// Player
 var Player = function () {
     this.width = 60;
     this.height = 80;
@@ -371,10 +286,6 @@ var Player = function () {
     this.sprite = 'images/char-boy.png';
 };
 
-
-/**
- * Method to draw player on the screen.
- */
 Player.prototype.render = function () {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y - 20);
     if (this.hasKey) {
@@ -383,55 +294,32 @@ Player.prototype.render = function () {
         }
     };
 
-
-/**
- * Sets player's x-coordinate to x-position of map start point.
- */
 Player.prototype.startX = function () {
     this.x = map.start.x;
     return this;
 };
 
-/**
- * Sets player's y-coordinate to y-position of map start point.
- */
 Player.prototype.startY = function () {
     this.y = map.start.y;
     return this;
 };
 
-/**
- * Position of player's left edge. Used for collision purposes
- */
-Player.prototype.left = function () {
+Player.prototype.leftEdge = function () {
     return this.x + 20;
 };
 
-/**
- *Position of player's right edge. Used for collision purposes
- */
-Player.prototype.right = function () {
+Player.prototype.rightEdge = function () {
     return this.x + this.width;
 };
 
-/**
- * Position of player's top edge. Used for collision purposes
- */
-Player.prototype.top = function () {
+Player.prototype.topEdge = function () {
     return this.y;
 };
 
-/**
- * Position of player's bottom edge. Used for collision purposes
- */
-Player.prototype.bottom = function () {
+Player.prototype.bottomEdge = function () {
     return this.y + this.height;
 };
 
-/**
- * Method to change the position of the player based on the user's keyboard
- * input. Takes in keystroke event and creates a new X or Y position based on the input
- */
 Player.prototype.move = function (direction) {
     // Set new coordinates equal to current coordinates.
     var newX = this.x;
@@ -458,28 +346,25 @@ Player.prototype.move = function (direction) {
         }
     });
     if (onMap) {
-        // Don't move the player if the new coordinates are at the end point
-        // and the player doesn't have the key.
+        // Blocks door entry if player doesn't have the key
         if (newX === map.end.x && newY === map.end.y && !this.hasKey) {
             return;
         }
         var hitRock = false;
         map.rocks.forEach(function (rock) {
-            // Don't move the player if the new coordinates are the same
-            // as the coordinates of a rock.
+            // Blocks movement onto rocks
             if (newX === rock.x && newY === rock.y) {
                 hitRock = true;
             }
         });
         var hitWall = false;
         map.tiles.forEach(function (tile) {
-            // Don't move the player if the new coordinates are the same
-            // as the coordinates of a wall.
+            // Blocks movement into walls
             if (tile instanceof Wall && newX === tile.x && newY === tile.y){
                 hitWall = true;
             }
         });
-        // If all these tests have been passed, move the player.
+        // Moves player assuming valid new location
         if (!hitRock && !hitWall) {
             this.x = newX;
             this.y = newY;
@@ -511,31 +396,20 @@ Player.prototype.handleInput = function (input) {
     }
 };
 
-/**
- * Items for the player to collect!  This class is not used but is the base
- * for all item subclasses.
- */
+//Item Base Class
 var Item = function (x, y) {
     this.x = x;
     this.y = y;
     this.renderOffsetY = -20;
-    // If an item's destroyed property is true, it will be removed from
-    // allItems array during the update function.
     this.destroyed = false;
 };
 
-/**
- * Draws item's sprite on screen.
- */
 Item.prototype.render = function () {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y +
         this.renderOffsetY);
 };
 
-
-/**
- * Heart item which will give an extra life.
- */
+//Gives extra life on pickup
 var Heart = function (x, y) {
     Item.call(this, x, y);
     this.sprite = 'images/Heart.png';
@@ -544,10 +418,7 @@ var Heart = function (x, y) {
 Heart.prototype = Object.create(Item.prototype);
 Heart.prototype.constructor = Heart;
 
-/**
- * Key item which changes hasKey property to true, allowing the player to pass the door
- * to the next level
- */
+//Allows passage onto next level
 var Key = function (x, y) {
     Item.call(this, x, y);
     this.sprite = 'images/Key.png';
@@ -556,9 +427,7 @@ var Key = function (x, y) {
 Key.prototype = Object.create(Item.prototype);
 Key.prototype.constructor = Key;
 
-/**
- *Chest item which will increase the number of bullets the player has by 1
- */
+//Contains a bullet for the player's gun
 var Gem = function (x, y) {
     Item.call(this, x, y);
     this.sprite = 'images/chest.png';
@@ -569,10 +438,6 @@ var Gem = function (x, y) {
 Gem.prototype = Object.create(Item.prototype);
 Gem.prototype.constructor = Gem;
 
-/**
- * Draws Chest's sprite on screen.  Opacity is reduced if ammo's fading property
- * is set to true.
- */
 Gem.prototype.render = function () {
     if (this.fading) {
         ctx.globalAlpha = 0.5;
@@ -582,44 +447,35 @@ Gem.prototype.render = function () {
     ctx.globalAlpha = 1;
 };
 
-/**
- * Starts two timers.  After first timer ends, the chest will fade.  After the
- * second the chest will be destroyed (removed from allItems).
- */
 Gem.prototype.disappear = function () {
     var thisGem = this;
     var fadeTime = 2500;
     var destroyTime = fadeTime + 1500;
+//Gives the chest opacity to signify imminent disappearance
     setTimeout(function () {
         thisGem.fading = true;
     }, fadeTime);
+//Destroys chest when time runs out
     setTimeout(function () {
         thisGem.destroyed = true;
     }, destroyTime);
 };
 
-/*
- * Base Tile constructor to be used for all MapTile subclasses. Hosts X and Y coordinates
- * for the tiles
- */
+//Base Tile Constructor
 var MapTile = function (x, y) {
     this.x = x;
     this.y = y;
 };
 
-/**
- * Draws MapTile sprite on the screen.
- */
 MapTile.prototype.render = function () {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
 
-/**
- * A tile with a grass sprite.
- */
+//Grass Tile
 var Grass = function (x, y) {
     MapTile.call(this, x, y);
     this.sprite = 'images/grass-block.png';
+//Different sprite on dark levels.
     if (gamestate.level > DARK_LEVELS) {
         this.sprite = 'images/dead-grass-block.png';
     }
@@ -628,9 +484,7 @@ var Grass = function (x, y) {
 Grass.prototype = Object.create(MapTile.prototype);
 Grass.prototype.constructor = Grass;
 
-/**
- * A tile with a stone sprite.
- */
+//Stone Tile
 var Stone = function (x, y) {
     MapTile.call(this, x, y);
     this.sprite = 'images/stone-block.png';
@@ -642,9 +496,7 @@ var Stone = function (x, y) {
 Stone.prototype = Object.create(MapTile.prototype);
 Stone.prototype.constructor = Stone;
 
-/**
- * A tile with a water sprite.
- */
+//Water Tile
 var Water = function (x, y) {
     MapTile.call(this, x, y);
     this.sprite = 'images/water-block.png';
@@ -656,25 +508,17 @@ var Water = function (x, y) {
 Water.prototype = Object.create(MapTile.prototype);
 Water.prototype.constructor = Water;
 
-/**
- * Objects or important points placed on the map, that can't be collected
- * like items.
- */
+//Objects to placed on the map
 var MapObject = function (x, y) {
     this.x = x;
     this.y = y;
 };
 
-/**
- * Draws map object on the screen.
- */
 MapObject.prototype.render = function () {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y - 20);
 };
 
-/**
- * A map object that determines where the player starts on the map.
- */
+//Player Start point
 var StartPoint = function (x, y) {
     MapObject.call(this, x, y);
     this.sprite = 'images/nothing.png';
@@ -683,9 +527,7 @@ var StartPoint = function (x, y) {
 StartPoint.prototype = Object.create(MapObject.prototype);
 StartPoint.prototype.constructor = StartPoint;
 
-/**
- * The door or end point on a map.  The player needs a key to move through it.
- */
+//Player End point
 var Door = function (x, y) {
     MapObject.call(this, x, y);
     this.sprite = 'images/Door.png';
@@ -694,10 +536,7 @@ var Door = function (x, y) {
 Door.prototype = Object.create(MapObject.prototype);
 Door.prototype.constructor = Door;
 
-/**
- * A rock that blocks the way.  Players can't move on tiles that have a rock
- * on them.
- */
+//Rock Obstacle
 var Rock = function (x, y) {
     MapObject.call(this, x, y);
     this.sprite = 'images/Rock.png';
@@ -706,9 +545,7 @@ var Rock = function (x, y) {
 Rock.prototype = Object.create(MapObject.prototype);
 Rock.prototype.constructor = Rock;
 
-/*
- * A wall tile that exists to prevent movement to the topmost row
-*/
+//Wall Obstacle
 var Wall = function (x, y) {
     MapObject.call(this, x, y);
     this.sprite = 'images/Wall.png';
@@ -718,16 +555,14 @@ Wall.prototype = Object.create(MapObject.prototype);
 Wall.prototype.constructor = Wall;
 
 
-// Prevent arrow keys from scrolling window so game screen will not move
-// on user input.
+// Prevent arrow keys from scrolling window so game screen will not move on user input.
 window.addEventListener("keydown", function (e) {
     if ([37, 38, 39, 40].indexOf(e.keyCode) > -1) {
         e.preventDefault();
     }
 }, false);
 
-// This listens for key presses and sends the keys to your
-// Player.handleInput() method. You don't need to modify this.
+// This listens for key presses and sends the keys to your Player.handleInput() method.
 document.addEventListener('keyup', function (e) {
     var allowedKeys = {
         37: 'left',
@@ -735,22 +570,13 @@ document.addEventListener('keyup', function (e) {
         39: 'right',
         40: 'down',
         80: 'p',
-        67: 'c',
         65: 'a',
         68: 'd',
-        81: 'q',
-        69: 'e'
     };
     player.handleInput(allowedKeys[e.keyCode]);
 });
 
-
-
-/*
- * An attack class that will destroy enemies when they collide.
- * Attacks will originate at the coordinates of the player.
-*/
-
+//Attack Base Class
 var Attack = function () {
     this.x = player.x;
     this.y = player.y;
@@ -759,67 +585,29 @@ var Attack = function () {
     this.renderOffsetY = 80;
 };
 
-/*
- * Updates x-position of attack based on its speed and dt if the game
- * isn't paused.  If the attack moves past either edge of the screen
- * its speed will be reduced to zero and will be removed from the game.
- */
-
-Attack.prototype.update = function (dt) {
-    if (!gamestate.paused) {
-        this.x += dt * this.speed * gamestate.speed;
-    }
-    if (this.x > X_RIGHT || this.x < X_LEFT - X_STEP) {
-        this.speed = 0;
-    }
-};
-
-/*
- * Draws attacks sprite on screen.
- */
-
 Attack.prototype.render = function () {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y +
         this.renderOffsetY);
 };
 
-/*
- * @return {number} Position of attacks left edge.
- */
-Attack.prototype.left = function () {
-    return this.x;
+Attack.prototype.update = function (dt) {
+    if (!gamestate.paused) {
+        this.x += dt * this.speed * gamestate.speed;
+    }
+//Sets speed to zero when attack reaches screen edge so that the game knows to remove it
+    if (this.x > X_RIGHT || this.x < X_LEFT - X_STEP) {
+        this.speed = 0;
+    }
 };
 
-/*
- * @return {number} Position of attacks right edge.
- */
-Attack.prototype.right = function () {
-    return this.x + this.width;
-};
-
-/*
- * @return {number} Position of attacks top edge.
-*/
-Attack.prototype.top = function () {
-    return this.y;
-};
-
-/*
- * @return {number} Position of attacks bottom edge.
- */
-Attack.prototype.bottom = function () {
-    return this.y + this.height;
-};
-
-/*
-Bullet constructor
-*/
-
+//Bullet Attack
 var Pewpew = function (input) {
     Attack.call(this);
+//Left attack
     if (input === 'a') {
         this.speed = -300;
         this.sprite = 'images/circle.png';
+//Right attack
     } else if (input === 'd') {
         this.speed = 300;
         this.sprite = 'images/circle.png';
@@ -829,7 +617,24 @@ var Pewpew = function (input) {
 Pewpew.prototype = Object.create(Attack.prototype);
 Pewpew.prototype.constructor = Pewpew;
 
+Attack.prototype.leftEdge = function () {
+    return this.x;
+};
+
+Attack.prototype.rightEdge = function () {
+    return this.x + this.width;
+};
+
+Attack.prototype.topEdge = function () {
+    return this.y;
+};
+
+Attack.prototype.bottomEdge = function () {
+    return this.y + this.height;
+};
+
 // Game Dialog/Messages
+
 var deathMessage = "<h>You got caught!</h> <img src='images/caught.jpg' alt='caught'>";
 
 var gameOverMessage = "<h2><p>You died</p><br><h5 " +
@@ -837,7 +642,7 @@ var gameOverMessage = "<h2><p>You died</p><br><h5 " +
     "'text-align:center'>Level: <span id='finalLevel'></span>";
 
 var openingMessage = "<h2>Welcome, Gladiator, to Bug Arena!</h2><div class='text-left'>" +
-    "<img src='images/notsure.jpg' alt='chest' height = 160 width = 120>" +
+    "<img src='images/bugman.jpg' alt='chest' height = 160 width = 120>" +
     "<p>Two years ago, oxygen began spewing from the Arctic</p>" +
     "<p>At first, all we noticed was increased fuel efficiency and better growing plants</p>" +
     "<p>Then... we got bigger bugs</p>" +
@@ -857,5 +662,3 @@ var instructionMessage = "<h2>Controls</h2><hr><div " +
 
 var pauseMessage = "<h2>Game Paused</h2><hr><p>" +
     "Press <strong>Enter</strong> to resume.</p>";
-
-
