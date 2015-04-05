@@ -153,7 +153,7 @@ Charger.prototype.charging = function () {
     setInterval(function () {
         var willCharge = Math.random();
         if (willCharge > 0.5) {
-            self.sprite = 'images/charger-charging.png'
+            self.sprite = 'images/charger-charging.png';
             self.speed = 700;
             setTimeout(function () {
                 self.speed = originalSpeed;
