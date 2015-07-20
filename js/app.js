@@ -635,14 +635,14 @@ Attack.prototype.bottomEdge = function () {
 
 // Game Dialog/Messages
 
-var deathMessage = "<h>You got caught!</h> <img src='images/caught.jpg' alt='caught'>";
+var deathMessage = "<h>You got caught!</h> <img src='images/caught.JPG' alt='caught'>";
 
 var gameOverMessage = "<h2><p>You died</p><br><h5 " +
     "style='text-style:underline'>Your Stats</h5><p style=" +
     "'text-align:center'>Level: <span id='finalLevel'></span>";
 
 var openingMessage = "<h2>Welcome, Gladiator, to Bug Arena!</h2><div class='text-left'>" +
-    "<img src='images/bugman.jpg' alt='chest' height = 160 width = 120>" +
+    "<img src='images/bugman.JPG' alt='chest' height = 160 width = 120>" +
     "<p>Two years ago, oxygen began spewing from the Arctic</p>" +
     "<p>At first, all we noticed was increased fuel efficiency and better growing plants</p>" +
     "<p>Then... we got bigger bugs</p>" +
